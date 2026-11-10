@@ -1,0 +1,8 @@
+package order
+
+import "context"
+
+type Repository interface {
+	Save(context.Context, *Order) error
+	GetByID(context.Context, int64) (*Order, error)
+}

@@ -1,0 +1,85 @@
+services:
+  api:
+    build:
+      context: ./orderflow
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://orderflow:orderflow@postgres:5432/orderflow?sslmode=disable
+      REDIS_ADDR: redis:6379
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: on-failure
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  postgres:
+    image: postgres:18
+    restart: on-failure
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: orderflow
+      POSTGRES_PASSWORD: orderflow
+      POSTGRES_DB: orderflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderflow -d orderflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://orderflow:orderflow@postgres:5432/orderflow?sslmode=disable"
+      - "up"
+  migrate-test:
+    image: migrate/migrate
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://orderflow:orderflow@test-postgres:5432/orderflow?sslmode=disable"
+      - "up"
+  test-postgres:
+    image: postgres:18
+    restart: on-failure
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: orderflow
+      POSTGRES_PASSWORD: orderflow
+      POSTGRES_DB: orderflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderflow -d orderflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  test_postgres_data:
