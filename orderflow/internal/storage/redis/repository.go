@@ -12,14 +12,14 @@ import (
 )
 
 type Repository struct {
-	sqlRepo order.Repository
+	ordRepo order.Repository
 	client  *redis.Client
 	ttl     time.Duration
 }
 
-func New(sqlRepo order.Repository, client *redis.Client, ttl time.Duration) *Repository {
+func New(ordRepo order.Repository, client *redis.Client, ttl time.Duration) *Repository {
 	return &Repository{
-		sqlRepo: sqlRepo,
+		ordRepo: ordRepo,
 		client:  client,
 		ttl:     ttl,
 	}
@@ -27,7 +27,7 @@ func New(sqlRepo order.Repository, client *redis.Client, ttl time.Duration) *Rep
 
 func (r Repository) Save(ctx context.Context, order *order.Order) error {
 	// пока заглушка
-	return r.sqlRepo.Save(ctx, order)
+	return r.ordRepo.Save(ctx, order)
 }
 
 // на стадии разработки
@@ -37,7 +37,7 @@ func (r Repository) GetByID(ctx context.Context, id int64) (*order.Order, error)
 
 	res, err := r.client.Get(ctx, key).Bytes()
 	if errors.Is(err, redis.Nil) {
-		ord, err = r.sqlRepo.GetByID(ctx, id)
+		ord, err = r.ordRepo.GetByID(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +52,7 @@ func (r Repository) GetByID(ctx context.Context, id int64) (*order.Order, error)
 		return ord, nil
 	} else if err != nil {
 		// добавить лог, что редис давн
-		return r.sqlRepo.GetByID(ctx, id)
+		return r.ordRepo.GetByID(ctx, id)
 	}
 
 	err = json.Unmarshal(res, ord)
