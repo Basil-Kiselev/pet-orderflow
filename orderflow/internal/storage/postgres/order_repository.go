@@ -83,3 +83,16 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*order.Order, error
 
 	return &curOrd, nil
 }
+
+func (r *Repository) UpdateStatus(ctx context.Context, id int64, status order.Status) error {
+	res, err := r.pool.Exec(ctx, "update orders set status = $1 where id = $2", string(status), id)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("order not found")
+	}
+
+	return nil
+}

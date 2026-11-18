@@ -59,3 +59,16 @@ func (r Repository) GetByID(ctx context.Context, id int64) (*order.Order, error)
 
 	return ord, err
 }
+
+func (r *Repository) UpdateStatus(ctx context.Context, id int64, status order.Status) error {
+	err := r.ordRepo.UpdateStatus(ctx, id, status)
+	if err != nil {
+		return err
+	}
+
+	key := fmt.Sprintf("order:%d", id)
+
+	r.client.Del(ctx, key)
+
+	return nil
+}

@@ -31,3 +31,12 @@ func (repo MemoryRepo) GetByID(ctx context.Context, id int64) (*Order, error) {
 
 	return nil, fmt.Errorf("order not found")
 }
+
+func (repo *MemoryRepo) UpdateStatus(ctx context.Context, id int64, status Status) error {
+	if _, ok := repo.orders[id]; ok {
+		repo.orders[id].Status = status
+		return nil
+	}
+
+	return fmt.Errorf("order not found")
+}

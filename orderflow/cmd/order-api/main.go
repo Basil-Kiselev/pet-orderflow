@@ -79,6 +79,7 @@ func main() {
 	http.HandleFunc("/orders/preview", api.orderPreviewHandler)
 	http.HandleFunc("/orders", api.createOrder)
 	http.HandleFunc("/orders/{id}", api.getOrderByID)
+	http.HandleFunc("/orders/{id}/confirm", api.confirmOrder)
 
 	fmt.Println("OrderFlow server started on :8080")
 
@@ -225,6 +226,40 @@ func (api *api) getOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order, err := api.service.GetByID(r.Context(), orderID)
+	if err != nil {
+		http.Error(w, "order not found", http.StatusNotFound)
+		return
+	}
+
+	createdOrderResponse := orderResponse{
+		ID:     order.ID,
+		Status: string(order.Status),
+		Total:  order.Total(),
+	}
+
+	w.Header().Add("Content-type", "application/json")
+	err = json.NewEncoder(w).Encode(createdOrderResponse)
+	if err != nil {
+		fmt.Println("fail encode")
+		http.Error(w, "fail encode", http.StatusBadGateway)
+		return
+	}
+}
+
+func (api *api) confirmOrder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Add("Allow", http.MethodPost)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	orderID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "Fail decode path", http.StatusBadRequest)
+		return
+	}
+
+	order, err := api.service.Confirm(r.Context(), orderID)
 	if err != nil {
 		http.Error(w, "order not found", http.StatusNotFound)
 		return
