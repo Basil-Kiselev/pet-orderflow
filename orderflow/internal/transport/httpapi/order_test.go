@@ -1,4 +1,4 @@
-package main
+package httpapi
 
 import (
 	"context"
@@ -10,50 +10,9 @@ import (
 	"testing"
 )
 
-func TestHealthHandler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	rec := httptest.NewRecorder()
-
-	healthHandler(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Errorf("wrong status code")
-	}
-
-	var response healthResponse
-
-	err := json.NewDecoder(rec.Result().Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("invalid body")
-	}
-
-	if response.Status != "ok" {
-		t.Errorf("wrong response status")
-	}
-
-	if rec.Header().Get("Content-type") != "application/json" {
-		t.Errorf("wrong header")
-	}
-}
-
-func TestHealthHandlerMethodNotAllow(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/health", nil)
-	rec := httptest.NewRecorder()
-
-	healthHandler(rec, req)
-
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Errorf("wrong status code")
-	}
-
-	if rec.Header().Get("Allow") != http.MethodGet {
-		t.Errorf("wrong response header")
-	}
-}
-
 func TestOrderPreviewHandler(t *testing.T) {
 	var resp previewOrderResponse
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 	req := httptest.NewRequest(
@@ -63,7 +22,7 @@ func TestOrderPreviewHandler(t *testing.T) {
 	)
 	rec := httptest.NewRecorder()
 
-	api.orderPreviewHandler(rec, req)
+	h.orderPreviewHandler(rec, req)
 
 	if rec.Header().Get("Content-Type") != "application/json" {
 		t.Errorf("wrong content-type header")
@@ -84,7 +43,7 @@ func TestOrderPreviewHandler(t *testing.T) {
 }
 
 func TestWrongOrderInvalidJSONPreviewHandler(t *testing.T) {
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -95,7 +54,7 @@ func TestWrongOrderInvalidJSONPreviewHandler(t *testing.T) {
 	)
 	rec := httptest.NewRecorder()
 
-	api.orderPreviewHandler(rec, req)
+	h.orderPreviewHandler(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("wrong status code")
@@ -103,7 +62,7 @@ func TestWrongOrderInvalidJSONPreviewHandler(t *testing.T) {
 }
 
 func TestWrongOrderPreviewHandlerAllowMethod(t *testing.T) {
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -114,7 +73,7 @@ func TestWrongOrderPreviewHandlerAllowMethod(t *testing.T) {
 	)
 	rec := httptest.NewRecorder()
 
-	api.orderPreviewHandler(rec, req)
+	h.orderPreviewHandler(rec, req)
 
 	if rec.Header().Get("Allow") != http.MethodPost {
 		t.Errorf("wrong allow method")
@@ -126,7 +85,7 @@ func TestWrongOrderPreviewHandlerAllowMethod(t *testing.T) {
 }
 
 func TestWrongOrderInvalidDataPreviewHandler(t *testing.T) {
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -137,7 +96,7 @@ func TestWrongOrderInvalidDataPreviewHandler(t *testing.T) {
 	)
 	rec := httptest.NewRecorder()
 
-	api.orderPreviewHandler(rec, req)
+	h.orderPreviewHandler(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("wrong status code")
@@ -147,7 +106,7 @@ func TestWrongOrderInvalidDataPreviewHandler(t *testing.T) {
 func TestCreateOrder(t *testing.T) {
 	var respData orderResponse
 
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -158,7 +117,7 @@ func TestCreateOrder(t *testing.T) {
 	)
 	rec := httptest.NewRecorder()
 
-	api.createOrder(rec, req)
+	h.createOrder(rec, req)
 
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("wrong response code")
@@ -177,7 +136,7 @@ func TestGetOrderByID(t *testing.T) {
 	var getOrderResp orderResponse
 	ctx := context.Background()
 
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -198,7 +157,7 @@ func TestGetOrderByID(t *testing.T) {
 		},
 	}
 
-	_, err := api.service.Create(ctx, items)
+	_, err := h.service.Create(ctx, items)
 	if err != nil {
 		t.Fatalf("fail to create order")
 	}
@@ -212,7 +171,7 @@ func TestGetOrderByID(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req.SetPathValue("id", "1")
 
-	api.getOrderByID(rec, req)
+	h.getOrderByID(rec, req)
 
 	err = json.NewDecoder(rec.Result().Body).Decode(&getOrderResp)
 	if err != nil {
@@ -225,7 +184,7 @@ func TestGetOrderByID(t *testing.T) {
 }
 
 func TestWrongIdGetOrder(t *testing.T) {
-	api := api{
+	h := Handler{
 		service: order.NewService(order.NewRepo()),
 	}
 
@@ -238,7 +197,7 @@ func TestWrongIdGetOrder(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req.SetPathValue("id", "3")
 
-	api.getOrderByID(rec, req)
+	h.getOrderByID(rec, req)
 
 	if rec.Result().StatusCode != http.StatusNotFound {
 		t.Errorf("wrong status code")
