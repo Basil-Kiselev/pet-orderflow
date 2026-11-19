@@ -37,3 +37,22 @@ func (s Service) GetByID(ctx context.Context, id int64) (*Order, error) {
 
 	return order, nil
 }
+
+func (s *Service) Confirm(ctx context.Context, id int64) (*Order, error) {
+	ord, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get order: %w", err)
+	}
+
+	err = ord.Confirm()
+	if err != nil {
+		return nil, fmt.Errorf("fail to confirm order: %w", err)
+	}
+
+	err = s.repo.UpdateStatus(ctx, id, ord.Status)
+	if err != nil {
+		return nil, fmt.Errorf("fail to update status: %w", err)
+	}
+
+	return ord, nil
+}
