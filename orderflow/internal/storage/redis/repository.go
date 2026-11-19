@@ -61,7 +61,7 @@ func (r Repository) GetByID(ctx context.Context, id int64) (*order.Order, error)
 }
 
 func (r *Repository) UpdateStatus(ctx context.Context, id int64, status order.Status) error {
-	err := r.ordRepo.UpdateStatus(ctx, id, status)
+	err := r.sqlRepo.UpdateStatus(ctx, id, status)
 	if err != nil {
 		return err
 	}
