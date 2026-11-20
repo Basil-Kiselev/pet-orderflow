@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"orderflow/internal/order"
@@ -123,16 +124,16 @@ func (h *Handler) getOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.service.GetByID(r.Context(), orderID)
+	ord, err := h.service.GetByID(r.Context(), orderID)
 	if err != nil {
 		http.Error(w, "order not found", http.StatusNotFound)
 		return
 	}
 
 	createdOrderResponse := orderResponse{
-		ID:     order.ID,
-		Status: string(order.Status),
-		Total:  order.Total(),
+		ID:     ord.ID,
+		Status: string(ord.Status),
+		Total:  ord.Total(),
 	}
 
 	w.Header().Add("Content-type", "application/json")
@@ -157,16 +158,25 @@ func (h *Handler) confirmOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.service.Confirm(r.Context(), orderID)
+	ord, err := h.service.Confirm(r.Context(), orderID)
 	if err != nil {
-		http.Error(w, "order not found", http.StatusNotFound)
+		switch {
+		case errors.Is(err, order.ErrStockUnavailable):
+			http.Error(w, "stock unavailable", http.StatusServiceUnavailable)
+		case errors.Is(err, order.ErrInsufficientStock):
+			http.Error(w, "insufficient stock", http.StatusConflict)
+		case errors.Is(err, order.ErrorderNotFound):
+			http.Error(w, "order not found", http.StatusNotFound)
+		default:
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	createdOrderResponse := orderResponse{
-		ID:     order.ID,
-		Status: string(order.Status),
-		Total:  order.Total(),
+		ID:     ord.ID,
+		Status: string(ord.Status),
+		Total:  ord.Total(),
 	}
 
 	w.Header().Add("Content-type", "application/json")

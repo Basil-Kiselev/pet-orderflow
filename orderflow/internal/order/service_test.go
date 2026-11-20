@@ -5,9 +5,23 @@ import (
 	"testing"
 )
 
+type FakeStock struct {
+	stock map[string]int32
+}
+
+func NewFakeStock() *FakeStock {
+	return &FakeStock{
+		stock: map[string]int32{
+			"Test1": 52,
+			"Test2": 24,
+		},
+	}
+}
+
 func TestService(t *testing.T) {
 	repo := NewRepo()
-	service := NewService(repo)
+
+	service := NewService(repo, NewFakeStock())
 	ctx := context.Background()
 
 	items := []OrderItem{
@@ -52,7 +66,7 @@ func TestService(t *testing.T) {
 
 func TestServiceConfirm(t *testing.T) {
 	repo := NewRepo()
-	service := NewService(repo)
+	service := NewService(repo, NewFakeStock())
 	ctx := context.Background()
 
 	items := []OrderItem{
@@ -85,4 +99,8 @@ func TestServiceConfirm(t *testing.T) {
 	if updOrd.Status != StatusConfirmed {
 		t.Fatal("wrong status after update")
 	}
+}
+
+func (f FakeStock) GetStock(ctx context.Context, productName string) (int32, error) {
+	return f.stock[productName], nil
 }

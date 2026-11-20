@@ -13,7 +13,7 @@ import (
 func TestOrderPreviewHandler(t *testing.T) {
 	var resp previewOrderResponse
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 	req := httptest.NewRequest(
 		http.MethodPost,
@@ -44,7 +44,7 @@ func TestOrderPreviewHandler(t *testing.T) {
 
 func TestWrongOrderInvalidJSONPreviewHandler(t *testing.T) {
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	req := httptest.NewRequest(
@@ -63,7 +63,7 @@ func TestWrongOrderInvalidJSONPreviewHandler(t *testing.T) {
 
 func TestWrongOrderPreviewHandlerAllowMethod(t *testing.T) {
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	req := httptest.NewRequest(
@@ -86,7 +86,7 @@ func TestWrongOrderPreviewHandlerAllowMethod(t *testing.T) {
 
 func TestWrongOrderInvalidDataPreviewHandler(t *testing.T) {
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	req := httptest.NewRequest(
@@ -107,7 +107,7 @@ func TestCreateOrder(t *testing.T) {
 	var respData orderResponse
 
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	req := httptest.NewRequest(
@@ -137,7 +137,7 @@ func TestGetOrderByID(t *testing.T) {
 	ctx := context.Background()
 
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	items := []order.OrderItem{
@@ -185,7 +185,7 @@ func TestGetOrderByID(t *testing.T) {
 
 func TestWrongIdGetOrder(t *testing.T) {
 	h := Handler{
-		service: order.NewService(order.NewRepo()),
+		service: order.NewService(order.NewRepo(), NewFakeStock()),
 	}
 
 	req := httptest.NewRequest(

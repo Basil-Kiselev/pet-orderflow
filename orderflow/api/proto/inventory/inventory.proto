@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package inventory;
+
+option go_package = "orderflow/internal/gen/inventory;inventory";
+
+service InventoryService {
+    rpc GetStock(GetStockRequest) returns (GetStockResponse);
+}
+
+message GetStockRequest {
+    string product_name = 1;
+}
+
+message GetStockResponse {
+    int32 available_quantity = 1;
+}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"orderflow/internal/clients/inventorycli"
+	"orderflow/internal/gen/inventory"
 	"orderflow/internal/order"
 	"orderflow/internal/storage/postgres"
 	"orderflow/internal/storage/redis"
@@ -14,6 +16,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	goredis "github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const RedisTTL = 1 * time.Minute
@@ -42,7 +46,16 @@ func Run() error {
 
 	redisRepo := redis.New(postgres.NewRepo(pool), redisCli, RedisTTL)
 
-	httpHandler := httpapi.NewHandler(order.NewService(redisRepo))
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Printf("fail to create grpc client: %v", err)
+		return err
+	}
+	defer conn.Close()
+
+	client := inventory.NewInventoryServiceClient(conn)
+	invCli := inventorycli.NewClient(client)
+	httpHandler := httpapi.NewHandler(order.NewService(redisRepo, invCli))
 
 	fmt.Println("OrderFlow server started on :8080")
 
