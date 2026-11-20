@@ -2,7 +2,6 @@ package order
 
 import (
 	"context"
-	"fmt"
 )
 
 type MemoryRepo struct {
@@ -29,7 +28,7 @@ func (repo MemoryRepo) GetByID(ctx context.Context, id int64) (*Order, error) {
 		return order, nil
 	}
 
-	return nil, fmt.Errorf("order not found")
+	return nil, ErrorderNotFound
 }
 
 func (repo *MemoryRepo) UpdateStatus(ctx context.Context, id int64, status Status) error {
@@ -38,5 +37,5 @@ func (repo *MemoryRepo) UpdateStatus(ctx context.Context, id int64, status Statu
 		return nil
 	}
 
-	return fmt.Errorf("order not found")
+	return ErrorderNotFound
 }

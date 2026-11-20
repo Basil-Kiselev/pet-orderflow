@@ -12,7 +12,7 @@ func TestHealthHandler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
 
-	h := NewHandler(order.NewService(order.NewRepo()))
+	h := NewHandler(order.NewService(order.NewRepo(), NewFakeStock()))
 
 	h.healthHandler(rec, req)
 
@@ -40,7 +40,7 @@ func TestHealthHandlerMethodNotAllow(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/health", nil)
 	rec := httptest.NewRecorder()
 
-	h := NewHandler(order.NewService(order.NewRepo()))
+	h := NewHandler(order.NewService(order.NewRepo(), NewFakeStock()))
 
 	h.healthHandler(rec, req)
 

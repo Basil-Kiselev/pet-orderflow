@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"orderflow/internal/order"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -53,6 +55,11 @@ func (r *Repository) Save(ctx context.Context, ord *order.Order) error {
 func (r *Repository) GetByID(ctx context.Context, id int64) (*order.Order, error) {
 	curOrd := order.Order{}
 	err := r.pool.QueryRow(ctx, "select id, status from orders where id = $1", id).Scan(&curOrd.ID, &curOrd.Status)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, order.ErrorderNotFound
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("select db err: %w", err)
 	}
@@ -91,7 +98,7 @@ func (r *Repository) UpdateStatus(ctx context.Context, id int64, status order.St
 	}
 
 	if res.RowsAffected() == 0 {
-		return fmt.Errorf("order not found")
+		return order.ErrorderNotFound
 	}
 
 	return nil
