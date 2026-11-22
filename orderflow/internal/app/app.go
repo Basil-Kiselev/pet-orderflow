@@ -46,7 +46,7 @@ func Run() error {
 
 	redisRepo := redis.New(postgres.NewRepo(pool), redisCli, RedisTTL)
 
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(os.Getenv("INVENTORY_ADDR"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("fail to create grpc client: %v", err)
 		return err

@@ -1,0 +1,19 @@
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /build
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 go build -o /inventory ./cmd/inventory
+
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /inventory /app/inventory
+
+EXPOSE 50051
+
+CMD ["/app/inventory"]
