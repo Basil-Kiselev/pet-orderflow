@@ -49,6 +49,39 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  kafka:
+    image: apache/kafka:4.4.0
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test:
+        - CMD
+        - /opt/kafka/bin/kafka-topics.sh
+        - --bootstrap-server
+        - localhost:9092
+        - --list
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period : 10s
+  kafka-init:
+    image: apache/kafka:4.4.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    network_mode: "service:kafka"
+    entrypoint: ["/opt/kafka/bin/kafka-topics.sh"]
+    command:
+      - "--bootstrap-server"
+      - "localhost:9092"
+      - "--create"
+      - "--if-not-exists"
+      - "--topic"
+      - "order.confirmed"
+      - "--partitions"
+      - "1"
+      - "--replication-factor"
+      - "1"
   migrate:
     image: migrate/migrate
     depends_on:
