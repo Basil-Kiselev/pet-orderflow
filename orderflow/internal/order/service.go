@@ -3,18 +3,22 @@ package order
 import (
 	"context"
 	"fmt"
+	"log"
+	"orderflow/internal/order/events"
 	"time"
 )
 
 type Service struct {
 	repo  Repository
 	stock Stocker
+	epub  events.EventPublisher
 }
 
-func NewService(repo Repository, stock Stocker) *Service {
+func NewService(repo Repository, stock Stocker, epub events.EventPublisher) *Service {
 	return &Service{
 		repo:  repo,
 		stock: stock,
+		epub:  epub,
 	}
 }
 
@@ -64,6 +68,16 @@ func (s *Service) Confirm(ctx context.Context, id int64) (*Order, error) {
 	err = s.repo.UpdateStatus(ctx, id, ord.Status)
 	if err != nil {
 		return nil, fmt.Errorf("fail to update status: %w", err)
+	}
+
+	publishCtx, _ := context.WithTimeout(ctx, 3*time.Second)
+	err = s.epub.PublishOrderConfirmed(publishCtx, events.OrderConfirmedEvent{
+		OrderID:    ord.ID,
+		Total:      ord.Total(),
+		OccurredAt: time.Now(),
+	})
+	if err != nil {
+		log.Printf("fail to publish ord confirm event: %v", err)
 	}
 
 	return ord, nil

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"orderflow/internal/clients/inventorycli"
 	"orderflow/internal/gen/inventory"
+	"orderflow/internal/kafka"
 	"orderflow/internal/order"
 	"orderflow/internal/storage/postgres"
 	"orderflow/internal/storage/redis"
@@ -55,7 +56,14 @@ func Run() error {
 
 	client := inventory.NewInventoryServiceClient(conn)
 	invCli := inventorycli.NewClient(client)
-	httpHandler := httpapi.NewHandler(order.NewService(redisRepo, invCli))
+
+	producer := kafka.NewProducer(kafka.Config{
+		Brokers: []string{os.Getenv("KAFKA_ADDR")},
+		Topic:   "order.confirmed",
+	})
+	defer producer.Close()
+
+	httpHandler := httpapi.NewHandler(order.NewService(redisRepo, invCli, producer))
 
 	fmt.Println("OrderFlow server started on :8080")
 

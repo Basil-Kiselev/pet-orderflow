@@ -2,12 +2,15 @@ package order
 
 import (
 	"context"
+	"orderflow/internal/order/events"
 	"testing"
 )
 
 type FakeStock struct {
 	stock map[string]int32
 }
+
+type FakeProducer struct{}
 
 func NewFakeStock() *FakeStock {
 	return &FakeStock{
@@ -18,10 +21,14 @@ func NewFakeStock() *FakeStock {
 	}
 }
 
+func NewFakeProducer() *FakeProducer {
+	return &FakeProducer{}
+}
+
 func TestService(t *testing.T) {
 	repo := NewRepo()
 
-	service := NewService(repo, NewFakeStock())
+	service := NewService(repo, NewFakeStock(), NewFakeProducer())
 	ctx := context.Background()
 
 	items := []OrderItem{
@@ -66,7 +73,7 @@ func TestService(t *testing.T) {
 
 func TestServiceConfirm(t *testing.T) {
 	repo := NewRepo()
-	service := NewService(repo, NewFakeStock())
+	service := NewService(repo, NewFakeStock(), NewFakeProducer())
 	ctx := context.Background()
 
 	items := []OrderItem{
@@ -103,4 +110,8 @@ func TestServiceConfirm(t *testing.T) {
 
 func (f FakeStock) GetStock(ctx context.Context, productName string) (int32, error) {
 	return f.stock[productName], nil
+}
+
+func (p *FakeProducer) PublishOrderConfirmed(context.Context, events.OrderConfirmedEvent) error {
+	return nil
 }
